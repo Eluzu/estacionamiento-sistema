@@ -1,10 +1,22 @@
 import math
 from datetime import datetime
+from datetime import timezone
 
 from app.core.config import TARIFA_POR_FRACCION
 from app.models.parking import ParkingRecord
 from app.repositories.parking_repository import ParkingRepository
 from app.schemas.parking import ParkingCreate
+
+
+def _ahora_utc():
+    """
+    Hora actual en UTC, sin tzinfo (naive), para guardar en la columna
+    DATETIME de MySQL. Se usa SIEMPRE esta función -y nunca el
+    CURRENT_TIMESTAMP de MySQL ni datetime.now() sin más- para que
+    fecha_entrada y fecha_salida vengan del mismo reloj y sean
+    directamente restables entre sí.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class ParkingService:
@@ -19,6 +31,7 @@ class ParkingService:
 
         nuevo_registro = ParkingRecord(
             placa=placa,
+            fecha_entrada=_ahora_utc(),
             estado="ACTIVO"
         )
         return self.repository.create(nuevo_registro)
@@ -38,7 +51,7 @@ class ParkingService:
         if record.estado == "FINALIZADO":
             raise Exception("Este vehículo ya registró su salida.")
 
-        fecha_salida = datetime.now()
+        fecha_salida = _ahora_utc()
         record.fecha_salida = fecha_salida
 
         # --- Cálculo de la tarifa: $0.50 por hora o fracción de hora ---

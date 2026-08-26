@@ -3,7 +3,6 @@ from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy import Integer
 from sqlalchemy import String
-from sqlalchemy import func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
@@ -21,9 +20,12 @@ class ParkingRecord(Base):
     placa: Mapped[str] = mapped_column(
         String(10)
     )
+    # Sin server_default a propósito: el valor SIEMPRE se fija de forma
+    # explícita en ParkingService (en UTC), para que fecha_entrada y
+    # fecha_salida provengan del mismo reloj y el cálculo de la tarifa
+    # sea consistente, sin depender de la zona horaria configurada en MySQL.
     fecha_entrada: Mapped[DateTime] = mapped_column(
-        DateTime,
-        server_default=func.now()
+        DateTime
     )
     fecha_salida: Mapped[DateTime | None] = mapped_column(
         DateTime,
